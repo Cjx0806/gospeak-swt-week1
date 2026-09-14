@@ -25,6 +25,129 @@ jobs:
         uses: actions/checkout@v4
       - name: 解压网站
         run: mkdir _site && unzip -q gospeak-swt-week1-clean.zip -d _site
+      - name: 生成月底口测主线
+        run: |
+          python -m pip install -q edge-tts
+          python <<'PYAPP'
+          import asyncio
+          from pathlib import Path
+          import edge_tts
+
+          questions = [
+              ('Could you please introduce yourself?', [
+                  'Hello, my name is Junxi.',
+                  'I am a first-year student at Guangxi College for Preschool Education.',
+                  'My major is Sports and Arts Performance, and I am responsible and willing to learn.',
+                  'I also have a lifeguard certificate in China.',
+              ]),
+              ('Why did you choose the United States?', [
+                  'I chose the United States because I am interested in American culture.',
+                  'I want to experience American daily life.',
+                  'I want to meet local people.',
+                  'I also want to see how people live and work there.',
+              ]),
+              ('Why do you want to join the Summer Work Travel program?', [
+                  'I want to join SWT because I want to experience American culture and daily life.',
+                  'I want to meet local people.',
+                  'I want to learn about a different way of life.',
+                  'I also want to improve my English and become more independent.',
+              ]),
+              ('What kind of job are you interested in?', [
+                  'I am interested in lifeguard or recreation work because I enjoy swimming.',
+                  'I have a lifeguard certificate in China.',
+                  'I understand that I may need additional training in the United States.',
+                  'I am also open to other suitable jobs.',
+              ]),
+          ]
+          out = Path('_site/audio/mainline')
+          out.mkdir(parents=True, exist_ok=True)
+          async def save(text, name):
+              await edge_tts.Communicate(text, 'en-US-EmmaNeural', rate='-8%').save(str(out / name))
+          async def main():
+              jobs = []
+              for i, (question, lines) in enumerate(questions, 1):
+                  jobs.append(save(question, f'q{i:02d}.mp3'))
+                  jobs.append(save(' '.join(lines), f'a{i:02d}.mp3'))
+                  for j, line in enumerate(lines, 1):
+                      jobs.append(save(line, f'a{i:02d}-l{j}.mp3'))
+              await asyncio.gather(*jobs)
+          asyncio.run(main())
+
+          js = r'''(() => {
+            const lessons = [
+              {title:'真实自我介绍',q:'Could you please introduce yourself?',zh:'请简单介绍一下你自己。',keys:['Junxi','first-year student','major','lifeguard certificate'],lines:[
+                ['Hello, my name is Junxi.','你好，我叫俊熙。'],
+                ['I am a first-year student at Guangxi College for Preschool Education.','我是广西幼儿师范高等专科学校的大一学生。'],
+                ['My major is Sports and Arts Performance, and I am responsible and willing to learn.','我的专业是体育艺术表演；我有责任心，也愿意学习。'],
+                ['I also have a lifeguard certificate in China.','我还持有中国的游泳救生员证书。']
+              ]},
+              {title:'为什么选择美国',q:'Why did you choose the United States?',zh:'你为什么选择去美国？',keys:['American culture','daily life','local people','live and work'],lines:[
+                ['I chose the United States because I am interested in American culture.','我选择美国，因为我对美国文化感兴趣。'],
+                ['I want to experience American daily life.','我想体验美国的日常生活。'],
+                ['I want to meet local people.','我想认识当地人。'],
+                ['I also want to see how people live and work there.','我也想亲自看看当地人如何生活和工作。']
+              ]},
+              {title:'为什么参加SWT',q:'Why do you want to join the Summer Work Travel program?',zh:'你为什么想参加SWT？',keys:['culture','daily life','local people','independent'],lines:[
+                ['I want to join SWT because I want to experience American culture and daily life.','我想参加SWT，因为我想体验美国文化和日常生活。'],
+                ['I want to meet local people.','我想认识当地人。'],
+                ['I want to learn about a different way of life.','我想了解不同的生活方式。'],
+                ['I also want to improve my English and become more independent.','我也想提高英语，并变得更加独立。']
+              ]},
+              {title:'岗位与救生员证',q:'What kind of job are you interested in?',zh:'你对什么岗位感兴趣？',keys:['lifeguard','certificate in China','additional training','other jobs'],lines:[
+                ['I am interested in lifeguard or recreation work because I enjoy swimming.','我对救生员或休闲娱乐类工作感兴趣，因为我喜欢游泳。'],
+                ['I have a lifeguard certificate in China.','我持有中国的游泳救生员证书。'],
+                ['I understand that I may need additional training in the United States.','我知道自己可能还需要在美国接受额外培训。'],
+                ['I am also open to other suitable jobs.','我也愿意接受其他适合的工作。']
+              ]}
+            ];
+            let selected = Number(localStorage.getItem('gospeak-mainline-question') || 0);
+            let sound = null, stream = null, recorder = null, chunks = [], recording = false, playback = '';
+            const start = new Date(2026,8,14), target = new Date(2026,8,30,23,59,59);
+            const daysLeft = Math.max(0, Math.ceil((target-Date.now())/86400000));
+            const elapsed = Math.max(0, Math.floor((Date.now()-start)/86400000));
+            if (!localStorage.getItem('gospeak-mainline-question')) selected = Math.min(3, elapsed % 4);
+            function phase(){ return daysLeft > 10 ? ['第一阶段','先把4组真实答案说完整'] : daysLeft > 3 ? ['第二阶段','随机抽题，3秒内开始回答'] : ['最后冲刺','每天至少完成1次四题连答']; }
+            function play(path,button){
+              if(sound){ sound.pause(); sound=null; document.querySelectorAll('[data-main-audio]').forEach(x=>x.classList.remove('playing')); if(button && button.dataset.playing==='1'){button.dataset.playing='0';button.textContent=button.dataset.label;return;} }
+              document.querySelectorAll('[data-main-audio]').forEach(x=>{x.dataset.playing='0';x.textContent=x.dataset.label});
+              sound=new Audio(path); sound.loop=true; button.dataset.playing='1'; button.classList.add('playing'); button.textContent='■ 点此停止'; sound.play().catch(()=>{button.textContent='播放失败，请再点一次';});
+            }
+            function panel(){
+              const x=lessons[selected], n=String(selected+1).padStart(2,'0');
+              return '<div class="ml-panel"><div class="ml-question"><small>今日主问题</small><h2>'+x.q+'</h2><p>'+x.zh+'</p><button data-main-audio="./audio/mainline/q'+n+'.mp3" data-label="▶ 循环听问题">▶ 循环听问题</button></div><div class="ml-help"><small>先只看关键词</small><div>'+x.keys.map(k=>'<span>'+k+'</span>').join('')+'</div><details><summary>实在答不出，再展开完整答案</summary>'+x.lines.map((l,i)=>'<article><b>'+(i+1)+'</b><div><strong>'+l[0]+'</strong><p>'+l[1]+'</p></div><button data-main-audio="./audio/mainline/a'+n+'-l'+(i+1)+'.mp3" data-label="▶ 点读">▶ 点读</button></article>').join('')+'</details></div><div class="ml-actions"><button data-main-audio="./audio/mainline/a'+n+'.mp3" data-label="▶ 循环跟读完整答案">▶ 循环跟读完整答案</button><button id="ml-record">● 最终脱稿录音</button><audio id="ml-playback" controls playsinline '+(playback?'src="'+playback+'"':'hidden')+'></audio></div><p class="ml-rule">训练顺序：盲答10秒 → 看关键词 → 必要时看完整答案 → 跟读3遍 → 关闭答案脱稿录音。救生员证只说明是中国证书，不声称在美国自动有效。</p></div>';
+            }
+            function markup(){ const p=phase(); return '<section id="oral-mainline"><header><div><small>当前唯一主线 · MONTH-END ORAL TEST</small><h1>月底SWT口测冲刺</h1><p>'+p[0]+'：'+p[1]+'</p></div><div class="ml-count"><b>'+daysLeft+'</b><span>天后口测<br>目标 9月30日</span></div></header><div class="ml-profile"><span><b>学校</b>广西幼儿师范高等专科学校</span><span><b>专业</b>体育艺术表演</span><span><b>年级</b>大一</span><span><b>真实优势</b>中国游泳救生员证</span></div><nav>'+lessons.map((x,i)=>'<button data-main-select="'+i+'" class="'+(i===selected?'active':'')+'"><b>0'+(i+1)+'</b><span>'+x.title+'</span></button>').join('')+'</nav><div id="mainline-drill">'+panel()+'</div></section>'; }
+            function mount(){
+              const nav=[...document.querySelectorAll('.app-nav button')].find(x=>x.textContent.includes('每日监督'));
+              if(nav) nav.textContent='月底口测主线';
+              const host=document.querySelector('.coach-layout');
+              if(host && !document.getElementById('oral-mainline')) host.insertAdjacentHTML('afterbegin',markup());
+            }
+            document.addEventListener('click', async e=>{
+              const select=e.target.closest('[data-main-select]'); if(select){selected=Number(select.dataset.mainSelect);localStorage.setItem('gospeak-mainline-question',String(selected));document.getElementById('oral-mainline').outerHTML=markup();return;}
+              const audio=e.target.closest('[data-main-audio]'); if(audio){play(audio.dataset.mainAudio,audio);return;}
+              if(e.target.id==='ml-record'){
+                if(recording){recorder.stop();return;}
+                try{stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recorder.ondataavailable=x=>{if(x.data.size)chunks.push(x.data)};recorder.onstop=()=>{stream.getTracks().forEach(t=>t.stop());playback=URL.createObjectURL(new Blob(chunks,{type:recorder.mimeType||'audio/webm'}));recording=false;document.getElementById('mainline-drill').innerHTML=panel();};recorder.start();recording=true;e.target.textContent='■ 停止并保存录音';e.target.classList.add('recording');}catch{e.target.textContent='麦克风未允许：请在Safari设置中允许';}
+              }
+            });
+            new MutationObserver(mount).observe(document.getElementById('app'),{childList:true,subtree:true});
+            mount();
+          })();'''
+          css = r'''#oral-mainline{margin:0 0 18px;padding:26px;border-radius:26px;background:linear-gradient(135deg,#102d22,#1f513d);color:#fff;box-shadow:0 24px 70px rgba(18,45,34,.22)}#oral-mainline>header{display:flex;justify-content:space-between;gap:24px;align-items:center}#oral-mainline small{color:#d6ee73;font-size:9px;font-weight:900;letter-spacing:.14em}#oral-mainline h1{margin:7px 0 5px;font:700 38px Georgia,"Songti SC",serif}#oral-mainline header p{margin:0;color:#c5d7cd;font-size:10px}.ml-count{display:flex;gap:10px;align-items:center;padding:12px 16px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(255,255,255,.08)}.ml-count b{color:#d6ee73;font:700 44px Georgia}.ml-count span{font-size:9px;line-height:1.45}.ml-profile{display:grid;grid-template-columns:2fr 1.3fr .7fr 1.4fr;gap:7px;margin-top:17px}.ml-profile span{padding:11px;border-radius:11px;background:rgba(255,255,255,.08);font-size:9px}.ml-profile b{display:block;margin-bottom:4px;color:#d6ee73;font-size:8px}#oral-mainline>nav{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:13px}#oral-mainline>nav button{display:flex;gap:9px;align-items:center;padding:11px;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:transparent;color:#d5e2db;text-align:left}#oral-mainline>nav button b{color:#d6ee73;font:700 15px Georgia}#oral-mainline>nav button span{font-size:9px;font-weight:900}#oral-mainline>nav button.active{border-color:#d6ee73;background:#d6ee73;color:#173d2e}#oral-mainline>nav button.active b{color:#173d2e}.ml-panel{margin-top:10px;padding:18px;border-radius:17px;background:#fff;color:#172a21}.ml-question{display:grid;grid-template-columns:1fr auto;gap:4px 15px}.ml-question small,.ml-help small{color:#ff7048!important}.ml-question h2{grid-column:1;margin:5px 0 0;font:700 23px/1.35 Georgia}.ml-question p{grid-column:1;margin:2px 0;color:#6f7d75;font-size:10px}.ml-question button{grid-column:2;grid-row:1/4}.ml-panel button{padding:9px 12px;border:1px solid #173d2e;border-radius:9px;background:#fff;color:#173d2e;font-size:8px;font-weight:900}.ml-panel button.playing,.ml-actions button:first-child{background:#173d2e;color:#d6ee73}.ml-help{margin-top:14px;padding:14px;border-radius:13px;background:#edf3e9}.ml-help>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ml-help>div span{padding:7px 9px;border-radius:99px;background:#173d2e;color:#d6ee73;font:700 10px Georgia}.ml-help details{margin-top:10px}.ml-help summary{color:#ff7048;font-size:9px;font-weight:900;cursor:pointer}.ml-help article{display:grid;grid-template-columns:26px 1fr auto;gap:9px;align-items:center;padding:10px 0;border-bottom:1px solid #d7e0d7}.ml-help article>b{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;background:#173d2e;color:#d6ee73}.ml-help article strong{font:700 12px/1.4 Georgia}.ml-help article p{margin:3px 0 0;color:#6f7d75;font-size:8px}.ml-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.ml-actions button{padding:12px}.ml-actions #ml-record{border:0;background:#ff7048;color:#fff}.ml-actions #ml-record.recording{background:#c83d32}.ml-actions audio{grid-column:1/-1;width:100%}.ml-rule{margin:10px 0 0;color:#6f7d75;font-size:8px;line-height:1.55}@media(max-width:780px){#oral-mainline{padding:20px 15px;border-radius:21px}#oral-mainline>header{align-items:flex-start}#oral-mainline h1{font-size:29px}.ml-count{padding:8px 10px}.ml-count b{font-size:34px}.ml-profile{grid-template-columns:1fr 1fr}#oral-mainline>nav{grid-template-columns:1fr 1fr}.ml-question{display:block}.ml-question button{width:100%;margin-top:9px}.ml-help article{grid-template-columns:25px 1fr}.ml-help article button{grid-column:2;width:100%}.ml-actions{grid-template-columns:1fr}}'''
+          Path('_site/mainline-v13.js').write_text(js, encoding='utf-8')
+          Path('_site/mainline-v13.css').write_text(css, encoding='utf-8')
+          page = Path('_site/index.html')
+          html = page.read_text(encoding='utf-8')
+          html = html.replace('GoSpeak SWT V12｜第二周口测句子训练','GoSpeak SWT V13｜月底口测主线')
+          html = html.replace('</head>','  <link rel="stylesheet" href="./mainline-v13.css">\n  </head>')
+          html = html.replace('</body>','  <script src="./mainline-v13.js"></script>\n  </body>')
+          page.write_text(html, encoding='utf-8')
+          sw = Path('_site/sw.js')
+          if sw.exists():
+              text = sw.read_text(encoding='utf-8').replace('gospeak-independent-v12','gospeak-independent-v13')
+              sw.write_text(text, encoding='utf-8')
+          PYAPP
       - name: 配置 Pages
         uses: actions/configure-pages@v5
       - name: 上传网站
