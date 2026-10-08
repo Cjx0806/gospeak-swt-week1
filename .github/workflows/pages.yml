@@ -23,11 +23,13 @@ jobs:
     steps:
       - name: 读取仓库
         uses: actions/checkout@v4
+      - name: 解压 V18 可审阅源代码
+        run: unzip -qo gospeak-v18-source.zip -d .
       - name: 解压网站
         run: mkdir _site && unzip -q gospeak-swt-week1-clean.zip -d _site
       - name: 生成月底口测句子课与连段训练
         run: |
-          python -m pip install -q edge-tts
+          python -m pip install -q edge-tts==7.2.8
           python <<'PYAPP'
           import asyncio
           import re
@@ -331,6 +333,32 @@ jobs:
               text = sw.read_text(encoding='utf-8').replace('gospeak-independent-v12','gospeak-independent-v17-real-profile')
               sw.write_text(text, encoding='utf-8')
           PYAPP
+      - name: 校验并接入 V18 已生成的完整音频
+        run: |
+          set -euo pipefail
+          python -m pip install -q mutagen==1.48.1
+          python scripts/test_v18.py
+          test -s _site/mainline-v17-profile.js
+          test -s _site/mainline-v17-profile.css
+          unzip -qo gospeak-v18-modules.zip -d _site
+          unzip -qo gospeak-v18-collections.zip -d _site
+          python scripts/build_v18_listening.py _site --skip-audio
+          python - <<'PYCHECK'
+          import json
+          from pathlib import Path
+          from mutagen.mp3 import MP3
+          root = Path('_site')
+          manifest = json.loads((root / 'listening-v18.json').read_text())
+          assert len(manifest['modules']) == 14
+          tracks = [mode['all'] for mode in manifest['modes']]
+          tracks += [track for module in manifest['modules'] for track in module['tracks'].values()]
+          assert len(tracks) == 45
+          for track in tracks:
+              assert track['built'] and track['durationSeconds'] > 0
+              assert MP3(str(root / track['src'])).info.length > 0
+          assert (root / 'listening-v18.json').read_bytes() == (root / 'audio/v18/manifest.json').read_bytes()
+          print('Validated all 45 real V18 MP3 files before publishing.')
+          PYCHECK
       - name: 配置 Pages
         uses: actions/configure-pages@v5
       - name: 上传网站
