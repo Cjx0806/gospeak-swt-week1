@@ -32,6 +32,7 @@ jobs:
           unzip -q -o gospeak-v19-listening-modules.zip -d _site
           unzip -q -o gospeak-v19-listening-collections.zip -d _site
           unzip -q -o gospeak-v19-source.zip -d .
+          unzip -q -o gospeak-v19-update.zip -d .
           touch _site/.nojekyll
       - name: Validate curriculum, all audio and recorder behavior
         run: |
