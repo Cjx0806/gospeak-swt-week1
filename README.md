@@ -44,12 +44,13 @@
 
 ## 发布与维护
 
-为了在 GitHub 网页上传限制内发布，V19 使用四个经验证的 ZIP：
+为了在 GitHub 网页上传限制内发布，V19 使用四个基础 ZIP 和一个缓存升级包：
 
 - `gospeak-v19-site.zip`：完整静态站点，含逐句/单词新音频，不含连续长音频。
 - `gospeak-v19-listening-modules.zip`：42条单课长音轨与音频清单。
 - `gospeak-v19-listening-collections.zip`：3条全集长音轨。
 - `gospeak-v19-source.zip`：可审阅的 `assets/` 和 `scripts/`。
+- `gospeak-v19-update.zip`：最后解压到仓库根目录的缓存兼容补丁，更新 `_site/` 与可审阅源文件；不重复存放音频。
 
 工作流只解压、校验和部署，不在发布服务器上重新调用语音合成服务。原版本文件留作历史，不是当前活动课程。
 
