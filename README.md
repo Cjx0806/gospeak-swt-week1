@@ -1,4 +1,16 @@
-# GoSpeak SWT V19 · Sam 机构口测
+# GoSpeak SWT V19.2 · Sam 机构口测
+
+## V19.2 播放稳定性修复
+
+课程内容和本机学习/录音记录保持原样。本次修复快速切换点读后旧音频未释放、加载无期限等待、多个播放器抢声音、录音历史反复读入与页面重复挂载。关闭整日词音频批量预加载，优先播放用户刚点的内容；Service Worker 安装不再重复下载不会由它播放的全部音频。
+
+遇到无声时，先点页面顶部「声音没反应？恢复声音」，再点所需句子。此按钮不清除学习进度或录音。麦克风等待可点「取消麦克风等待」。示范音约 12—15 秒仍未载入时会解除等待并显示可重试提示；这不代表可解决所有网络或设备故障。
+
+修复版网址：https://cjx0806.github.io/gospeak-swt-week1/?v=19.2
+
+复现构建：在已有 V19.1 静态资源上运行 `python scripts/build_stability_v19_2.py`，再运行原有三组测试与 `test_mainline_stability.cjs`、`test_listening_stability.cjs`、`test_recorder_stability.cjs`、`test_legacy_audio_stability.cjs`，最后运行 `python scripts/package_v19_update.py`。本次无需重新生成音频。
+
+播放器资源释放与失败状态依据：[MDN load()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/load)、[MDN play()](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play)。
 
 独立静态学习网站，不需要 GPT 登录。
 
