@@ -1,4 +1,4 @@
-name: Deploy GoSpeak V19.2
+name: Deploy GoSpeak V20
 
 on:
   push:
@@ -33,16 +33,20 @@ jobs:
           unzip -q -o gospeak-v19-listening-collections.zip -d _site
           unzip -q -o gospeak-v19-source.zip -d .
           unzip -q -o gospeak-v19-update.zip -d .
+          unzip -q -o gospeak-v20-update.zip -d .
           touch _site/.nojekyll
       - name: Validate curriculum, all audio and recorder behavior
         run: |
           python -m pip install mutagen==1.48.1
-          python scripts/verify_v19.py _site
-          node --check _site/assets/mainline-v19.js
+          python scripts/verify_v20.py _site
+          python scripts/test_curriculum_v20.py
+          node --check _site/assets/mainline-v20.js
           node --check _site/assets/recorder-v19.js
           node --check _site/assets/listening-v18.js
           node scripts/test_recorder_v19.cjs
           node scripts/test_recorder_lifecycle_v19.cjs
+          node scripts/test_recorder_scoring_v20.cjs
+          node scripts/test_mainline_v20.cjs
           node scripts/test_mainline_v19.cjs
           node scripts/test_mainline_stability.cjs
           node scripts/test_listening_stability.cjs
