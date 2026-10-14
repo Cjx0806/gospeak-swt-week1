@@ -1,4 +1,4 @@
-name: Deploy GoSpeak V19
+name: Deploy GoSpeak V19.2
 
 on:
   push:
@@ -44,6 +44,10 @@ jobs:
           node scripts/test_recorder_v19.cjs
           node scripts/test_recorder_lifecycle_v19.cjs
           node scripts/test_mainline_v19.cjs
+          node scripts/test_mainline_stability.cjs
+          node scripts/test_listening_stability.cjs
+          node scripts/test_recorder_stability.cjs
+          node scripts/test_legacy_audio_stability.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
