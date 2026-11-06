@@ -1,4 +1,4 @@
-name: Deploy GoSpeak V21
+name: Deploy 快乐出村计划 V22
 
 on:
   push:
@@ -35,11 +35,18 @@ jobs:
           unzip -q -o gospeak-v19-update.zip -d .
           unzip -q -o gospeak-v20-update.zip -d .
           unzip -q -o gospeak-v21-update.zip -d .
+          unzip -q -o gospeak-v22-update.zip -d .
           touch _site/.nojekyll
       - name: Validate curriculum, all audio and recorder behavior
         run: |
           python -m pip install mutagen==1.48.1
-          python scripts/verify_v21.py _site
+          python scripts/verify_v22.py _site
+          python scripts/test_week3_v22.py
+          python scripts/test_interview_supplement_v22.py
+          node scripts/test_lesson_recognition_v22.cjs
+          node scripts/test_mainline_v22.cjs
+          node scripts/test_core_v22.cjs
+          node scripts/test_listening_first_v22.cjs
           python scripts/test_curriculum_v21.py
           python scripts/test_curriculum_v20.py
           node --check _site/assets/mainline-v21.js
