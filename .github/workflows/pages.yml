@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V24
+name: Deploy 快乐出村计划 V25
 
 on:
   push:
@@ -38,6 +38,7 @@ jobs:
           unzip -q -o gospeak-v22-update.zip -d .
           unzip -q -o gospeak-v23-update.zip -d .
           unzip -q -o gospeak-v24-update.zip -d .
+          unzip -q -o gospeak-v25-update.zip -d .
           touch _site/.nojekyll
       - name: Validate curriculum, all audio and recorder behavior
         run: |
@@ -51,6 +52,7 @@ jobs:
           node scripts/test_mainline_v22.cjs
           node scripts/test_core_v22.cjs
           node scripts/test_listening_first_v22.cjs
+          node scripts/test_mainline_v25.cjs
           python scripts/test_curriculum_v21.py
           python scripts/test_curriculum_v20.py
           node --check _site/assets/mainline-v21.js
