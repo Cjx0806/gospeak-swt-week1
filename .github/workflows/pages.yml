@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V22
+name: Deploy 快乐出村计划 V23
 
 on:
   push:
@@ -36,6 +36,7 @@ jobs:
           unzip -q -o gospeak-v20-update.zip -d .
           unzip -q -o gospeak-v21-update.zip -d .
           unzip -q -o gospeak-v22-update.zip -d .
+          unzip -q -o gospeak-v23-update.zip -d .
           touch _site/.nojekyll
       - name: Validate curriculum, all audio and recorder behavior
         run: |
