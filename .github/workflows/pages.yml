@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V31
+name: Deploy 快乐出村计划 V32
 
 on:
   push:
@@ -81,6 +81,10 @@ jobs:
           unzip -qo gospeak-v31-update.zip
           for mode in teaching mock review; do unzip -qo "gospeak-v31-$mode.zip"; done
           node scripts/test_real_v31.cjs
+      - name: Verify state, city and reason interview rounds
+        run: |
+          unzip -qo gospeak-v32-update.zip
+          node scripts/test_location_v32.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
