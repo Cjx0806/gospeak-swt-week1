@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V30
+name: Deploy 快乐出村计划 V31
 
 on:
   push:
@@ -76,6 +76,11 @@ jobs:
           node scripts/test_listening_stability.cjs
           node scripts/test_recorder_stability.cjs
           node scripts/test_legacy_audio_stability.cjs
+      - name: Apply and validate Felix interview release
+        run: |
+          unzip -qo gospeak-v31-update.zip
+          for mode in teaching mock review; do unzip -qo "gospeak-v31-$mode.zip"; done
+          node scripts/test_real_v31.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
