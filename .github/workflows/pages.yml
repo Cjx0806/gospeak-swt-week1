@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V32
+name: Deploy 快乐出村计划 V33
 
 on:
   push:
@@ -85,6 +85,14 @@ jobs:
         run: |
           unzip -qo gospeak-v32-update.zip
           node scripts/test_location_v32.cjs
+      - name: Verify continuous location dialogue
+        run: |
+          unzip -qo gospeak-v33-update.zip
+          python scripts/test_dialogue_v33.py
+          node scripts/test_location_v32.cjs
+          node --check _site/assets/location-listen-v33.js
+          node --check _site/assets/cards-v24.js
+          node --check _site/assets/listening-v18.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
