@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V33
+name: Deploy 快乐出村计划 V34
 
 on:
   push:
@@ -93,6 +93,11 @@ jobs:
           node --check _site/assets/location-listen-v33.js
           node --check _site/assets/cards-v24.js
           node --check _site/assets/listening-v18.js
+      - name: Verify ordered interview practice and aligned answers
+        run: |
+          unzip -qo gospeak-v34-update.zip
+          node scripts/test_v34.cjs
+          python scripts/test_dialogue_v33.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
