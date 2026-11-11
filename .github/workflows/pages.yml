@@ -1,4 +1,4 @@
-name: Deploy 快乐出村计划 V35
+name: Deploy 快乐出村计划 V36
 
 on:
   push:
@@ -103,6 +103,11 @@ jobs:
           unzip -qo gospeak-v35-update.zip
           node scripts/test_v35.cjs
           python scripts/test_dialogue_v33.py
+      - name: Verify four-turn opening interview and feedback
+        run: |
+          unzip -qo gospeak-v36-update.zip
+          node scripts/test_v36.cjs
+          node scripts/test_v35.cjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -118,4 +123,4 @@ jobs:
           deps="$RUNNER_TEMP/v35-browser"
           npm install --prefix "$deps" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           "$deps/node_modules/.bin/playwright" install --with-deps webkit
-          NODE_PATH="$deps/node_modules" node scripts/verify_published_ipad_v35.cjs "${SITE_URL%/}/"
+          NODE_PATH="$deps/node_modules" node scripts/verify_published_ipad_v36.cjs "${SITE_URL%/}/"
