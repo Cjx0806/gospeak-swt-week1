@@ -108,6 +108,8 @@ jobs:
           unzip -qo gospeak-v36-update.zip
           node scripts/test_v36.cjs
           node scripts/test_v35.cjs
+      - name: Add Echo interview review to ordered practice
+        run: python scripts/build_echo_review.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -124,3 +126,4 @@ jobs:
           npm install --prefix "$deps" --no-audit --no-fund --ignore-scripts playwright@1.56.1
           "$deps/node_modules/.bin/playwright" install --with-deps webkit
           NODE_PATH="$deps/node_modules" node scripts/verify_published_ipad_v36.cjs "${SITE_URL%/}/"
+          NODE_PATH="$deps/node_modules" node scripts/verify_echo_ipad.cjs "${SITE_URL%/}/"
