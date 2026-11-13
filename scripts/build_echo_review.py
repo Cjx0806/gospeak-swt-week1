@@ -77,4 +77,9 @@ if "echo-review.html" not in sw:
     sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo38';", sw, count=1)
     sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>38", sw)
     sw = sw.replace("self.addEventListener('install'", "core.push(new URL('echo-review.html', BASE).href);\nself.addEventListener('install'", 1)
-    worker.write_text(sw)
+    navigation = "if (event.request.mode === 'navigate') {"
+    if sw.count(navigation) != 1:
+        raise ValueError('Navigation cache anchor changed')
+    head, tail = sw.split(navigation)
+    echo_key = "const navigationKey = requestUrl.pathname === new URL('echo-review.html', BASE).pathname ? new URL('echo-review.html', BASE).href : new URL('./', BASE).href;"
+    worker.write_text(head + navigation + "\n    " + echo_key + tail.replace("new URL('./', BASE).href", "navigationKey"))
