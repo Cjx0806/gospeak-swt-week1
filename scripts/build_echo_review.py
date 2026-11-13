@@ -46,17 +46,19 @@ index = [
  ("有余力再练","3 喜欢的科目｜4 校园生活｜12 兄弟姐妹｜14 学生社团｜31 社会安全号码｜32 生病｜33 银行开户｜39 遗失护照或钱包｜40 延迟发薪｜41 遇到歧视｜42 迷路"),
 ]
 css = """*{box-sizing:border-box}body{font:17px/1.6 system-ui,sans-serif;margin:auto;max-width:760px;padding:22px;color:#182339;background:#fbfaff}a,.q{color:#204fb5}h1{font-size:1.65em}h2{font-size:1.15em}details{background:white;border:1px solid #ccd4e2;border-radius:12px;margin:12px 0;padding:12px 16px}summary{cursor:pointer;font-weight:700}article+article{border-top:1px solid #e2e4e9;margin-top:14px;padding-top:12px}small{color:#625370}p{margin:.35em 0}.q{font-size:1.08em;font-weight:650}article .zh{color:#465367}"""
+from echo_exam import build_exam
 from echo_lesson import build
 from shutil import copytree
 lessons = build(groups, topics)
 encoded = json.dumps(lessons, ensure_ascii=False).replace("<", "\\u003c")
 extra = root / "echo"
-page = ['<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>周日口测 · Echo 听说练习</title><style>'+css+'</style><link rel="stylesheet" href="assets/recorder-v19.css"><link rel="stylesheet" href="assets/practice-v26.css"><link rel="stylesheet" href="echo/practice.css?v=1"><main id="oral-mainline"><a href="./index.html#route">返回 SWT 顺序练题</a><h1>自我介绍之后，练这七组</h1><label for="topic">练习主题</label> <select id="topic">'+''.join(f'<option value="{g["key"]}">{escape(g["title"])}</option>' for g in lessons)+'</select><nav id="stages" aria-label="练习步骤"></nav><section id="practice"></section><p id="audio-status" role="status"></p><audio id="demo" preload="none"></audio><script type="application/json" id="lessons">'+encoded+'</script>']
+page = ['<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>周日口测 · Echo 听说练习</title><style>'+css+'</style><link rel="stylesheet" href="assets/recorder-v19.css"><link rel="stylesheet" href="assets/practice-v26.css"><link rel="stylesheet" href="echo/practice.css?v=1"><main id="oral-mainline"><a href="./index.html#route">返回 SWT 顺序练题</a> · <a href="echo-exam.html">Echo 三主题模拟考场</a><h1>自我介绍之后，练这七组</h1><label for="topic">练习主题</label> <select id="topic">'+''.join(f'<option value="{g["key"]}">{escape(g["title"])}</option>' for g in lessons)+'</select><nav id="stages" aria-label="练习步骤"></nav><section id="practice"></section><p id="audio-status" role="status"></p><audio id="demo" preload="none"></audio><script type="application/json" id="lessons">'+encoded+'</script>']
 page.append('<details><summary>全部 45 题分别放在哪里？</summary>')
 for heading,body in index:
     page.append(f'<h2>{heading}</h2><p>{body}</p>')
 page.append('</details></main><script src="assets/recorder-v19.js?v=22&design=31"></script><script src="echo/practice.js?v=1"></script></html>')
 copytree(extra, site/'echo', dirs_exist_ok=True)
+build_exam(site,lessons)
 for g in lessons:
     for line in g['questions'] + g['answers'] + [x for t in g['followups'] for x in [t['question'],*t['answers']]]:
         if not (site/'echo/audio'/f"{line['id']}.mp3").is_file():
@@ -65,6 +67,11 @@ for g in lessons:
 hook = "if(stage===1&&!follow&&['r30-intro','r35-home','r35-personality','r30-sales'].includes(item.id))content+=btn('opening-lobby'"
 player = site/'assets/mainline-v21.js'
 code = player.read_text()
+lobby_anchor = "btn('opening-lobby','只练四轮开场')+"
+if 'href="./echo-exam.html"' not in code:
+    if code.count(lobby_anchor)!=1:raise ValueError('Exam lobby entry changed')
+    code = code.replace(lobby_anchor, '\'<p><a href="./echo-exam.html">Echo 三主题模拟口测 · 10 分制</a></p>\'+' + lobby_anchor)
+    player.write_text(code)
 if 'href="./echo-review.html"' not in code:
     if code.count(hook)!=1: raise ValueError('Study view anchor changed')
     player.write_text(code.replace(hook,'''if(stage===1&&!follow)content+='<p class="r30-hint"><a href="./echo-review.html">周日口测 · Echo 同题与追问</a></p>';
@@ -73,16 +80,16 @@ if 'href="./echo-review.html"' not in code:
 # Install a fresh player URL so a returning iPad can see the new course entry.
 import re
 index_file = site / "index.html"
-index_file.write_text(re.sub(r"(mainline-v21\.js\?v=22&design=)\d+", r"\g<1>38", index_file.read_text()))
+index_file.write_text(re.sub(r"(mainline-v21\.js\?v=22&design=)\d+", r"\g<1>40", index_file.read_text()))
 worker = site / "sw.js"
 sw = worker.read_text()
 if "echo-review.html" not in sw:
-    sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo39';", sw, count=1)
-    sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>38", sw)
+    sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo40';", sw, count=1)
+    sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>40", sw)
     sw = sw.replace("self.addEventListener('install'", "core.push(new URL('echo-review.html', BASE).href);\nself.addEventListener('install'", 1)
     navigation = "if (event.request.mode === 'navigate') {"
     if sw.count(navigation) != 1:
         raise ValueError('Navigation cache anchor changed')
     head, tail = sw.split(navigation)
-    echo_key = "const navigationKey = requestUrl.pathname === new URL('echo-review.html', BASE).pathname ? new URL('echo-review.html', BASE).href : new URL('./', BASE).href;"
+    echo_key = "const navigationKey = ['echo-review.html','echo-exam.html'].some(p => new URL(p, BASE).pathname === requestUrl.pathname) ? new URL(requestUrl.pathname, BASE).href : new URL('./', BASE).href;"
     worker.write_text(head + navigation + "\n    " + echo_key + tail.replace("new URL('./', BASE).href", "navigationKey"))
