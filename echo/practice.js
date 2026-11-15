@@ -5,7 +5,7 @@
   const panel = document.querySelector('#practice'), demo = document.querySelector('#demo');
   const status = document.querySelector('#audio-status');
   const labels = ['听考官问法','逐句跟读','随机追问'];
-  let lesson = lessons[0], stage = 0, index = 0, visible = false;
+  let lesson = lessons.find(row=>row.key===location.hash.slice(1)) || lessons[0], stage = 0, index = 0, visible = false;
   let follow = null, remaining = [], model = false, playerTurn = 0, recorder = null;
   const esc = text => String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const button = (action,label,style='') => '<button type="button" data-action="'+action+'" class="'+style+'">'+label+'</button>';
@@ -56,6 +56,9 @@
         (model&&follow.note?'<p>'+esc(follow.note)+'</p>':'')+words(line)+controls()+'<div id="take"></div>'+
         '<div class="steps">'+(index?button('prev','上一句'):'')+
         (index+1<lines.length?button('next','下一句','primary'):button('draw','听随机追问','primary'))+'</div>';
+      if(model && lesson.key==='r30-hire' && follow===lesson.followups[0]){
+        html+='<div class="steps"><a href="#pool-rescue">接着练：有人溺水</a><a href="#pool-running">接着练：小孩在池边跑</a></div>';
+      }
       target={id:'sam-v25:echo:'+lesson.key+':'+line.id,title:'逐句跟读',kind:'sentence',assessmentMode:'scripted',expectedText:line.en};
     }else{
       html='<h2>听题，脱稿回答</h2>'+controls()+button('show',visible?'收起问句':'显示问句与中文')+
@@ -84,7 +87,7 @@
     if(stage===2)play(follow.question,1,false);
   }
   stages.onclick=e=>{const b=e.target.closest('[data-stage]');if(b&&!recording())enter(Number(b.dataset.stage));};
-  select.onchange=()=>{if(recording()){select.value=lesson.key;return;}lesson=lessons.find(l=>l.key===select.value);remaining=[];follow=null;enter(0);};
+  select.onchange=()=>{if(recording()){select.value=lesson.key;return;}lesson=lessons.find(l=>l.key===select.value);remaining=[];follow=null;history.replaceState(null,'','#'+lesson.key);enter(0);};
   panel.addEventListener('click',e=>{
     const b=e.target.closest('[data-action]');if(!b)return;
     const action=b.dataset.action;
@@ -108,5 +111,10 @@
     if(stage===0&&action==='next')play(lesson.questions[index],1,true);
   });
   window.addEventListener('pagehide',stop);
+  window.addEventListener('hashchange',()=>{
+    const next=lessons.find(row=>row.key===location.hash.slice(1));
+    if(!next || recording())return;
+    select.value=next.key;select.onchange();
+  });
   select.value=lesson.key;render();
 })();

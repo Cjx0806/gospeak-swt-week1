@@ -49,14 +49,19 @@ css = """*{box-sizing:border-box}body{font:17px/1.6 system-ui,sans-serif;margin:
 from echo_exam import build_exam
 from echo_lesson import build
 from shutil import copytree
+from pool_scenarios import pool_lessons
 lessons = build(groups, topics)
+scenarios = pool_lessons()
+hire = next(g for g in lessons if g["key"] == "r30-hire")
+hire["followups"].extend({"question": g["questions"][0], "answers": g["answers"], "note": ""} for g in scenarios)
+lessons[lessons.index(hire)+1:lessons.index(hire)+1] = scenarios
 encoded = json.dumps(lessons, ensure_ascii=False).replace("<", "\\u003c")
 extra = root / "echo"
-page = ['<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>周日口测 · Echo 听说练习</title><style>'+css+'</style><link rel="stylesheet" href="assets/recorder-v19.css"><link rel="stylesheet" href="assets/practice-v26.css"><link rel="stylesheet" href="echo/practice.css?v=1"><main id="oral-mainline"><a href="./index.html#route">返回 SWT 顺序练题</a> · <a href="echo-exam.html">Echo 三主题模拟考场</a><h1>自我介绍之后，练这七组</h1><label for="topic">练习主题</label> <select id="topic">'+''.join(f'<option value="{g["key"]}">{escape(g["title"])}</option>' for g in lessons)+'</select><nav id="stages" aria-label="练习步骤"></nav><section id="practice"></section><p id="audio-status" role="status"></p><audio id="demo" preload="none"></audio><script type="application/json" id="lessons">'+encoded+'</script>']
+page = ['<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>周日口测 · Echo 听说练习</title><style>'+css+'</style><link rel="stylesheet" href="assets/recorder-v19.css"><link rel="stylesheet" href="assets/practice-v26.css"><link rel="stylesheet" href="echo/practice.css?v=1"><main id="oral-mainline"><a href="./index.html#route">返回 SWT 顺序练题</a> · <a href="echo-exam.html">Echo 三主题模拟考场</a><h1>SWT 口测听说练习</h1><label for="topic">练习主题</label> <select id="topic">'+''.join(f'<option value="{g["key"]}">{escape(g["title"])}</option>' for g in lessons)+'</select><nav id="stages" aria-label="练习步骤"></nav><section id="practice"></section><p id="audio-status" role="status"></p><audio id="demo" preload="none"></audio><script type="application/json" id="lessons">'+encoded+'</script>']
 page.append('<details><summary>全部 45 题分别放在哪里？</summary>')
 for heading,body in index:
     page.append(f'<h2>{heading}</h2><p>{body}</p>')
-page.append('</details></main><script src="assets/recorder-v19.js?v=22&design=31"></script><script src="echo/practice.js?v=1"></script></html>')
+page.append('</details></main><script src="assets/recorder-v19.js?v=22&design=31"></script><script src="echo/practice.js?v=2"></script></html>')
 copytree(extra, site/'echo', dirs_exist_ok=True)
 build_exam(site,lessons)
 for g in lessons:
@@ -77,15 +82,25 @@ if 'href="./echo-review.html"' not in code:
     player.write_text(code.replace(hook,'''if(stage===1&&!follow)content+='<p class="r30-hint"><a href="./echo-review.html">周日口测 · Echo 同题与追问</a></p>';
     '''+hook))
 
+# Make both scenes directly reachable from the ordered interview route.
+code = player.read_text()
+scene_anchor = "if(stage===1&&!follow)content+="
+if 'echo-review.html#pool-rescue' not in code:
+    if code.count(scene_anchor) != 1:
+        raise ValueError("Ordered practice entry changed")
+    scene_links = """if(!follow&&(stage===1||['r30-job','r30-hire','r30-swim'].includes(item.id)))content+='<nav class="r30-actions" aria-label="救生员职责情境"><a href="./echo-review.html#pool-rescue">有人溺水怎么办</a><a href="./echo-review.html#pool-running">小孩在池边跑怎么办</a></nav>';
+    """
+    player.write_text(code.replace(scene_anchor, scene_links + scene_anchor))
+
 # Install a fresh player URL so a returning iPad can see the new course entry.
 import re
 index_file = site / "index.html"
-index_file.write_text(re.sub(r"(mainline-v21\.js\?v=22&design=)\d+", r"\g<1>40", index_file.read_text()))
+index_file.write_text(re.sub(r"(mainline-v21\.js\?v=22&design=)\d+", r"\g<1>41", index_file.read_text()))
 worker = site / "sw.js"
 sw = worker.read_text()
 if "echo-review.html" not in sw:
-    sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo40';", sw, count=1)
-    sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>40", sw)
+    sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo41';", sw, count=1)
+    sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>41", sw)
     sw = sw.replace("self.addEventListener('install'", "core.push(new URL('echo-review.html', BASE).href);\nself.addEventListener('install'", 1)
     navigation = "if (event.request.mode === 'navigate') {"
     if sw.count(navigation) != 1:
@@ -93,3 +108,6 @@ if "echo-review.html" not in sw:
     head, tail = sw.split(navigation)
     echo_key = "const navigationKey = ['echo-review.html','echo-exam.html'].some(p => new URL(p, BASE).pathname === requestUrl.pathname) ? new URL(requestUrl.pathname, BASE).href : new URL('./', BASE).href;"
     worker.write_text(head + navigation + "\n    " + echo_key + tail.replace("new URL('./', BASE).href", "navigationKey"))
+
+# Also refresh clients built with the previous Echo cache.
+worker.write_text(re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>41", worker.read_text().replace("-echo40'", "-echo41'")))

@@ -8,7 +8,7 @@ const { webkit, devices } = require('playwright');
     page.on('requestfailed',request=>console.error('failed request',request.url(),request.failure()));
     const response = await page.goto(new URL('echo-review.html', process.argv[2]).href);
     assert.equal(response.status(), 200);
-    await page.getByRole('heading', {name: '自我介绍之后，练这七组'}).waitFor();
+    await page.getByRole('heading', {name: 'SWT 口测听说练习'}).waitFor();
     const topic=page.locator('#topic'), audio=page.locator('#demo');
     assert.deepEqual((await topic.locator('option').allTextContents()).slice(0,3),['工作经历','为什么参加 SWT','救生员岗位']);
     for(const id of ['r30-sales','r30-purpose','r30-hire']){
@@ -43,13 +43,32 @@ const { webkit, devices } = require('playwright');
       await btn('看短答并逐句练').tap();
       await page.locator('#practice .spoken').waitFor();
     }
+    for(const [key,firstAnswer] of [['pool-rescue',"I'd signal for help right away."],['pool-running',"I'd tell the child to walk."]]){
+      await page.goto(new URL('echo-review.html#'+key,process.argv[2]).href);
+      await page.waitForFunction(k=>document.querySelector('#topic')?.value===k,key);
+      const button=name=>page.getByRole('button',{name,exact:true});
+      await button('慢速循环').tap();
+      await page.waitForFunction(()=>{const a=document.querySelector('#demo');return a.loop&&a.playbackRate<1&&a.currentTime>0;});
+      await button('开始逐句跟读').tap();
+      assert.equal(await page.locator('#practice .spoken').innerText(),firstAnswer);
+      await page.locator('.swt-score').waitFor();
+      await button('下一句').tap();
+      await button('正常循环').tap();
+      await page.waitForFunction(()=>{const a=document.querySelector('#demo');return a.loop&&a.playbackRate===1&&a.currentTime>0;});
+      await page.getByRole('button',{name:'3 · 随机追问'}).tap();
+      const prompt=await audio.getAttribute('src');
+      await button('换一道追问').tap();
+      assert.notEqual(await audio.getAttribute('src'),prompt);
+      await button('看短答并逐句练').tap();
+      await page.locator('.swt-score').waitFor();
+    }
     await page.getByText('全部 45 题分别放在哪里？').tap();
     const numbers = (await page.locator('main > details').last().locator('p').allTextContents()).join(' ').match(/\d+/g).map(Number).sort((a,b) => a-b);
     assert.deepEqual(numbers, Array.from({length:45}, (_,i) => i+1));
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.getByRole('link', {name:'返回 SWT 顺序练题'}).tap();
     await page.getByRole('link', {name:'周日口测 · Echo 同题与追问'}).tap();
-    await page.getByRole('heading', {name:'自我介绍之后，练这七组'}).waitFor();
+    await page.getByRole('heading', {name:'SWT 口测听说练习'}).waitFor();
     // Exercise the real Echo score panel with a controlled recognition result.
     // Linux WebKit does not have Apple's microphone or online speech service.
     await page.addInitScript(()=>{
