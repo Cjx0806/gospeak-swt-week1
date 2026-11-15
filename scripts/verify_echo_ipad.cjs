@@ -77,7 +77,7 @@ const { webkit, devices } = require('playwright');
       window.SpeechRecognition=class {
         start(){setTimeout(()=>{
           this.onstart?.();
-          const result=[{transcript:'I bought and sold used phones.'}];result.isFinal=true;
+          const result=[{transcript:window.testSpeech||'I bought and sold used phones.'}];result.isFinal=true;
           this.onresult?.({results:[result]});
         },80);}
         stop(){setTimeout(()=>this.onend?.(),0);}
@@ -136,10 +136,7 @@ const { webkit, devices } = require('playwright');
     await page.getByRole('button',{name:'▶ 慢速循环跟读'}).tap();
     await page.waitForFunction(()=>!!document.querySelector('.sam25-play [aria-pressed=true]'));
     await page.locator('.sam25-play [data-sam-action=stop]').tap();
-    await page.evaluate(()=>window.SpeechRecognition=class {
-      start(){setTimeout(()=>{this.onstart?.();const r=[{transcript:'Please walk.'}];r.isFinal=true;this.onresult?.({results:[r]});},80);}
-      stop(){setTimeout(()=>this.onend?.(),0);}abort(){this.stop();}
-    });
+    await page.evaluate(()=>window.testSpeech='Please walk.');
     await page.getByRole('button',{name:'开始跟读评分',exact:true}).tap();
     await page.waitForFunction(()=>document.querySelector('.swt-score strong')?.textContent.startsWith('100'));
     await page.getByRole('button',{name:'这句会了，下一句 →'}).tap();
