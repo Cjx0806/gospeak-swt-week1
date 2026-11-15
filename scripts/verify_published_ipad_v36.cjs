@@ -6,7 +6,7 @@ const {webkit,devices}=require('playwright');
   const page=await browser.newPage({...devices['iPad (gen 7)'],viewport:{width:820,height:1180}});
   const root=process.argv[2];page.setDefaultTimeout(20000);
   await page.goto(root+'?v=36&verify='+Date.now()+'#opening');
-  await page.getByText('V36 · 快乐出村计划',{exact:true}).waitFor();
+  await page.getByText('V46 · 快乐出村计划',{exact:true}).waitFor();
   assert.equal(await page.locator('select[data-real-topic]').inputValue(),'r35-home');
   await page.getByRole('button',{name:'同一题，换个问法'}).tap();
   await page.getByRole('button',{name:'没听懂？显示题目'}).tap();

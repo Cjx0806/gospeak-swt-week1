@@ -125,6 +125,32 @@ const { webkit, devices } = require('playwright');
     assert.equal(await page.locator('#practice .spoken').innerText(),'Please walk. You could slip and fall.');
     await b('正常循环').tap();await b('停止').tap();await b('继续练习').tap();
     assert.equal(await topic.inputValue(),'pool-rescue');
+    await page.goto(new URL('?v=46',process.argv[2]).href);
+    await page.locator('#retest-entry').tap();
+    await page.locator('nav[aria-label="复试六题"]').waitFor();
+    await page.getByRole('button',{name:'对奔跑的孩子说什么',exact:true}).tap();
+    assert.equal(await page.locator('select[data-real-topic]').inputValue(),'pool-say');
+    assert.equal(new URL(page.url()).hash,'#retest');
+    await page.getByRole('button',{name:'开始学第1句 →'}).tap();
+    assert.equal(await page.locator('.sam25-en').textContent(),'Please walk.');
+    await page.getByRole('button',{name:'▶ 慢速循环跟读'}).tap();
+    await page.waitForFunction(()=>!!document.querySelector('.sam25-play [aria-pressed=true]'));
+    await page.locator('.sam25-play [data-sam-action=stop]').tap();
+    await page.evaluate(()=>window.SpeechRecognition=class {
+      start(){setTimeout(()=>{this.onstart?.();const r=[{transcript:'Please walk.'}];r.isFinal=true;this.onresult?.({results:[r]});},80);}
+      stop(){setTimeout(()=>this.onend?.(),0);}abort(){this.stop();}
+    });
+    await page.getByRole('button',{name:'开始跟读评分',exact:true}).tap();
+    await page.waitForFunction(()=>document.querySelector('.swt-score strong')?.textContent.startsWith('100'));
+    await page.getByRole('button',{name:'这句会了，下一句 →'}).tap();
+    assert.equal(await page.locator('.sam25-en').textContent(),'You could slip and fall.');
+    await page.getByRole('button',{name:'学完了，连起来说 →'}).tap();
+    await page.locator('.sam25-answer-lines').waitFor();
+    await page.getByRole('button',{name:'有人溺水怎么办',exact:true}).tap();
+    await page.getByRole('button',{name:'开始学第1句 →'}).tap();
+    assert.match(await page.locator('.sam25-en').innerText(),/signal for help/);
+    await page.getByRole('link',{name:'进入 Alex 救生员模拟考场'}).tap();
+    assert.match(page.url(),/examiner=pool/);
     console.log('PASS iPad WebKit: direct link, touch, 45 questions, viewport and course round trip');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode=1; });

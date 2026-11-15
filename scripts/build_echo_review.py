@@ -106,7 +106,7 @@ if 'echo-review.html#pool-rescue' not in code:
     player.write_text(code.replace(scene_anchor, scene_links + scene_anchor))
 
 code = player.read_text()
-if "course=lifeguard5" not in code:
+if "course=lifeguard5" not in code and "function retestPicker(" not in code:
     anchor = "return realHeader(item)+"
     if code.count(anchor) != 1:
         raise ValueError("Ordered practice header changed")
@@ -120,7 +120,7 @@ if 'examiner=pool' not in code:
     player.write_text(code.replace(entry, '<a href="./echo-exam.html?examiner=pool">Alex · 救生员复测考官</a> · ' + entry))
 
 code = player.read_text()
-if "course=swt" not in code:
+if "course=swt" not in code and "function retestPicker(" not in code:
     marker = '<a href="./echo-review.html?course=lifeguard5">'
     assert code.count(marker) == 1
     player.write_text(code.replace(marker, '<a href="./echo-review.html?course=swt">复试重点 · 六题听说</a> · ' + marker))
@@ -144,3 +144,7 @@ if "echo-review.html" not in sw:
 # Align existing preview and production service-worker versions.
 sw = re.sub(r"-echo\d+';", "-echo45';", worker.read_text(), count=1)
 worker.write_text(re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>45", sw))
+
+from native_retest import install, install_player
+install(site, curriculum, focus)
+install_player(site)
