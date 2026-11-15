@@ -87,6 +87,35 @@ const { webkit, devices } = require('playwright');
     await page.getByRole('button',{name:'开始逐句跟读'}).tap();
     await page.getByRole('button',{name:'开始跟读评分',exact:true}).tap();
     await page.waitForFunction(()=>document.querySelector('.swt-score strong')?.textContent.startsWith('100'));
+    await page.goto(new URL('echo-review.html?course=lifeguard5',process.argv[2]).href);
+    await page.getByRole('heading',{name:'救生员五题 · 复测主线'}).waitFor();
+    assert.equal(await topic.locator('option').count(),5);
+    const b=name=>page.getByRole('button',{name,exact:true});
+    await b('轮流听全部问法').tap();
+    await page.waitForFunction(()=>document.querySelector('#practice small').textContent.includes('2 /'),{},{timeout:15000});
+    await b('停止').tap();
+    await topic.selectOption('pool-priority');
+    await b('开始逐句跟读').tap();
+    assert.equal(await page.locator('#practice .spoken').innerText(),'Keeping swimmers safe.');
+    await page.locator('.swt-score').waitFor();
+    await b('下一句').tap();
+    await b('下一题 · 先听考官').tap();
+    assert.equal(await topic.inputValue(),'pool-rescue');
+    await b('3 · 五题连续追问').tap();
+    const heard=new Set();
+    for(let i=0;i<5;i++){
+      assert.ok(await topic.isHidden());
+      assert.equal(await page.locator('#practice .spoken').count(),0);
+      const src=await audio.getAttribute('src');
+      const key=await page.evaluate(src=>JSON.parse(document.querySelector('#retest-lessons').textContent)
+        .find(l=>l.questions.some(q=>src.endsWith(q.id+'.mp3')))?.key,src);
+      assert.ok(key && !heard.has(key));heard.add(key);
+      await b(i===4?'结束并核对五题':'我答完了，听下一题').tap();
+    }
+    await page.getByRole('heading',{name:'五题已结束'}).waitFor();
+    assert.equal(await page.locator('#practice details').count(),5);
+    await b('加练：你会对孩子说什么？').tap();
+    assert.equal(await page.locator('#practice .spoken').innerText(),'Please walk.');
     console.log('PASS iPad WebKit: direct link, touch, 45 questions, viewport and course round trip');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode=1; });

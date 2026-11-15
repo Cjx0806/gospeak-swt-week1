@@ -34,3 +34,24 @@ def pool_lessons():
                  [("I'd ask another staff member to help.", "我会请另一位工作人员协助。"),
                   ("I'd keep watching my area.", "我会继续留意自己负责的区域。")])]}
     return [drowning, running]
+
+
+def retest_lessons(hire, scenarios):
+    hiring = dict(hire, questions=[
+        clip("Why should we hire you as a lifeguard?", "为什么要录用你做救生员？"),
+        *hire["questions"]])
+    duties = {
+        "key": "pool-duties", "title": "救生员的职责",
+        "cue": "听到 do 或 duties，回答你上班时做什么。",
+        "questions": [hire["followups"][0]["question"],
+                      clip("What are your duties as a lifeguard?", "当救生员，你的职责是什么？")],
+        "answers": hire["followups"][0]["answers"], "followups": []}
+    priority = {
+        "key": "pool-priority", "title": "岗位最重要的是什么",
+        "cue": "听到 most important 或 matters most，先说你最看重什么，再讲一个行动。",
+        "questions": [clip("What's the most important part of the job?", "这份工作最重要的是什么？"),
+                      clip("What matters most when you're a lifeguard?", "你当救生员时，最重要的是什么？")],
+        "answers": [clip("Keeping swimmers safe.", "保护泳客安全。"),
+                    clip("That's why I watch the water closely.", "所以我会密切留意水里的情况。")],
+        "followups": []}
+    return [hiring, duties, priority, *scenarios]
