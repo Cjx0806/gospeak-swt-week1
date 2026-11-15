@@ -12,6 +12,13 @@
     hire:'说一个能胜任的理由。可以用中国救生员证，再补平时的游泳训练。',
     duties:'说上班时具体做什么，例如留意游泳者、提醒他们遵守泳池规则。',
     outdoor:'先说你能否接受户外高温工作，再补一句原因或态度。',
+    priority:'说清你最看重什么，例如保护泳客安全。也可以补一句你会怎样留意水面。',
+    rescue:'说明你会如何立刻应对水中险情，例如发信号求助，并按场馆预案和训练实施救援。',
+    first:'对方问的是第一步。可以说你会立即发信号求援。',
+    teammate:'对方问你会请队友做什么。例如请队友拨打 911 或拿急救设备。',
+    running:'说出预防滑倒的具体行动，例如提醒孩子慢慢走，同时继续留意泳客。',
+    say:'试着直接对孩子说一句话，例如 Please walk. You could slip.',
+    persists:'孩子仍在跑，需要再采取行动。例如请另一名工作人员协助，同时留意自己负责的区域。',
     unsafe:'先说你会怎样处理不安全的要求，再说怎样向主管说明或求助。'
   };
   function normalized(text){return text.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();}
@@ -51,6 +58,34 @@
         const watch=/\b(watch|monitor|check|supervise|keep an eye on|protect|help|rescue)\b.*\b(swimmers?|people|pool|water|guests?)\b/.test(s);
         const rules=/\b(rules|safe|safety)\b/.test(s)&&/\b(follow|enforce|remind|keep|make sure|check)\b/.test(s);
         return [watch||rules,watch||rules];
+      }
+      case 'priority':{
+        const safe=/\b(safety|safe|prevent drowning|prevent accidents|protect (the )?(swimmers|people)|save lives)\b/.test(s);
+        const watch=/\b(stay alert|pay attention|watch the water|watch the swimmers)\b/.test(s);
+        return [safe||watch,safe];
+      }
+      case 'rescue':
+      case 'first':{
+        const alert=/\b(signal|call|shout|yell|whistle|ask|alert|activate|blow)\b.*\b(help|team|backup|guard|alarm|whistle|plan|911|9 1 1)\b|\bsound the alarm\b/.test(s);
+        const plan=/\b(follow|use|activate|start)\b.*\b(training|emergency plan|emergency action plan|eap)\b/.test(s);
+        const rescue=/\b(rescue|save|help)\b.*\b(swimmer|person|them|victim)\b/.test(s);
+        return key==='first'?[alert||plan,alert||plan]:[alert||plan||rescue,[alert,plan,rescue].filter(Boolean).length>=2];
+      }
+      case 'teammate':{
+        const call=/\b(call|contact|dial|phone|get)\b.*\b(911|9 1 1|nine one one|ems|emergency services|ambulance|help)\b/.test(s);
+        const kit=/\b(get|bring|fetch|grab)\b.*\b(aed|first aid kit|defibrillator|rescue (tube|equipment))\b/.test(s);
+        return [call||kit,call||kit];
+      }
+      case 'running':
+      case 'say':{
+        const walk=/\b(walk|slow down|stop running|no running|don't run|do not run)\b/.test(s);
+        const direct=/^(hey |please |kid |buddy |excuse me |could you |can you |you should |you need to |you can )*(walk|slow down|stop running|no running|don't run|do not run)\b/.test(s);
+        return [walk,key==='running'?walk:direct];
+      }
+      case 'persists':{
+        const help=/\b(ask|call|tell|alert|get|signal)\b.*\b(staff|teammate|coworker|guard|parent|supervisor|manager|backup|help)\b/.test(s);
+        const remind=/\b(remind|warn|explain|repeat)\b|\b(tell|ask)\b.*\bagain\b/.test(s);
+        return [help||remind,help||remind];
       }
       case 'outdoor':{
         const environment=/\b(outside|outdoors?|sun|heat|hot)\b/.test(s);

@@ -65,7 +65,7 @@ for heading,body in index:
     page.append(f'<h2>{heading}</h2><p>{body}</p>')
 page.append('</details></main><script src="assets/recorder-v19.js?v=22&design=31"></script><script src="echo/practice.js?v=3"></script></html>')
 copytree(extra, site/'echo', dirs_exist_ok=True)
-build_exam(site,lessons)
+build_exam(site,lessons,retest)
 for g in lessons + retest:
     for line in g['questions'] + g['answers'] + [x for t in g['followups'] for x in [t['question'],*t['answers']]]:
         if not (site/'echo/audio'/f"{line['id']}.mp3").is_file():
@@ -101,15 +101,22 @@ if "course=lifeguard5" not in code:
         raise ValueError("Ordered practice header changed")
     player.write_text(code.replace(anchor, """return realHeader(item)+'<p class="r30-actions"><a href="./echo-review.html?course=lifeguard5">复测主线 · 救生员五题</a></p>'+"""))
 
+code = player.read_text()
+entry = '<a href="./echo-exam.html">Echo 三主题模拟口测 · 10 分制</a>'
+if 'examiner=pool' not in code:
+    if code.count(entry) != 1:
+        raise ValueError("Mock exam lobby entry changed")
+    player.write_text(code.replace(entry, '<a href="./echo-exam.html?examiner=pool">Alex · 救生员复测考官</a> · ' + entry))
+
 # Install a fresh player URL so a returning iPad can see the new course entry.
 import re
 index_file = site / "index.html"
-index_file.write_text(re.sub(r"(mainline-v21\.js\?v=22&design=)\d+", r"\g<1>42", index_file.read_text()))
+index_file.write_text(re.sub(r"(mainline-v21\.js\?v=22&design=)\d+", r"\g<1>43", index_file.read_text()))
 worker = site / "sw.js"
 sw = worker.read_text()
 if "echo-review.html" not in sw:
-    sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo42';", sw, count=1)
-    sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>42", sw)
+    sw = re.sub(r"(const VERSION = '[^']+)';", r"\g<1>-echo43';", sw, count=1)
+    sw = re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>43", sw)
     sw = sw.replace("self.addEventListener('install'", "core.push(new URL('echo-review.html', BASE).href);\nself.addEventListener('install'", 1)
     navigation = "if (event.request.mode === 'navigate') {"
     if sw.count(navigation) != 1:
@@ -119,4 +126,4 @@ if "echo-review.html" not in sw:
     worker.write_text(head + navigation + "\n    " + echo_key + tail.replace("new URL('./', BASE).href", "navigationKey"))
 
 # Also refresh clients built with the previous Echo cache.
-worker.write_text(re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>42", worker.read_text().replace("-echo40'", "-echo42'")))
+worker.write_text(re.sub(r"(if\(u.pathname.endsWith\('/mainline-v21.js'\)\)u.searchParams.set\('design',')\d+", r"\g<1>43", worker.read_text().replace("-echo40'", "-echo43'")))

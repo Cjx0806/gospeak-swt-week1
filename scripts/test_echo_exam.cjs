@@ -16,3 +16,14 @@ assert.equal(mark('hire',{complete:false,heard:'certificate'}).score,null);
 assert.equal(mark('sales',{skipped:true}).score,0);
 assert.equal(total([{score:6},{score:6}]),6);
 assert.equal(total([{score:null},{score:10}]),null);
+
+for(const [key,answer] of Object.entries({
+  priority:'Keeping swimmers safe.',rescue:"I'd signal for help and follow the emergency plan.",
+  first:"I'd blow my whistle.",teammate:"Please call 911.",running:"I'd tell the child to walk.",
+  say:'Please walk.',persists:"I'd ask another staff member to help."
+})){
+  assert.equal(m(key,answer),10,key);
+  assert.equal(m(key,'I have a Chinese lifeguard certificate.'),0,key);
+}
+assert.equal(m('say',"I would tell the child to walk."),7);
+assert.equal(m('rescue',"I would call for help."),7);

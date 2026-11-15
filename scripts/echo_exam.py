@@ -2,7 +2,7 @@ from echo_lesson import clip
 from pathlib import Path
 import json
 
-def build_exam(site, lessons):
+def build_exam(site, lessons, retest):
     by_key = {g['key']:g for g in lessons}
     intro = [
         clip("Please introduce yourself.", "请介绍一下自己。"),
@@ -22,7 +22,17 @@ def build_exam(site, lessons):
     ]
     data={'main':[dict(key=k,title=t,options=o) for k,t,o in groups],
           'follow':[dict(parent=p,key=k,title=t,options=[o]) for p,k,t,o in follow]}
-    for row in data['main']+data['follow']:
+    opening = clip("Hi, thanks for joining today. First, could you tell me a little about yourself?",
+                   "你好，感谢你今天参加。首先，能简单介绍一下自己吗？")
+    pool = [dict(key="intro", title="自我介绍", options=[opening])]
+    for key, lesson in zip(["hire", "duties", "priority", "rescue", "running"], retest):
+        pool.append(dict(key=key, title=lesson["title"], options=lesson["questions"]))
+    for lesson, keys in [(retest[3], ["first", "teammate"]), (retest[4], ["say", "persists"])]:
+        for key, prompt in zip(keys, lesson["followups"]):
+            question = prompt["question"]
+            pool.append(dict(key=key, title=question["zh"], options=[question]))
+    data["pool"] = pool
+    for row in data['main']+data['follow']+pool:
         for line in row['options']:
             if not (site/'echo/audio'/(line['id']+'.mp3')).is_file():raise ValueError(line['en'])
     page=(Path(__file__).resolve().parents[1]/'echo/exam-template.html').read_text()
