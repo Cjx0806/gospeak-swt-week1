@@ -147,7 +147,8 @@ const { webkit, devices } = require('playwright');
     await page.getByRole('button',{name:'开始学第1句 →'}).tap();
     assert.match(await page.locator('.sam25-en').innerText(),/signal for help/);
     await page.getByRole('link',{name:'进入 Alex 救生员模拟考场'}).tap();
-    assert.match(page.url(),/examiner=pool/);
+    await page.waitForURL(/echo-exam\.html\?examiner=pool/);
+    await page.getByRole("button",{name:"开始模拟口测"}).waitFor();
     console.log('PASS iPad WebKit: direct link, touch, 45 questions, viewport and course round trip');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode=1; });
