@@ -43,7 +43,7 @@ const {webkit,devices}=require('playwright'),assert=require('node:assert/strict'
   for(let i=0;i<8;i++){
     const turn=(await poolSession()).turns[i];
     assert.ok(poolAnswers[turn.key],turn.key);
-    visited.push(turn.key);
+    visited.push(turn.key);assert.equal(await page.locator('.reference').count(),0);
     await page.waitForFunction(()=>document.querySelector('#voice').currentTime>0);
     assert.equal(await page.locator('#practice details[open]').count(),0);
     if(i===0)assert.match(await page.locator('#practice details [lang=en]').textContent(),/Hi, thanks for joining today/);
@@ -56,6 +56,16 @@ const {webkit,devices}=require('playwright'),assert=require('node:assert/strict'
   assert.equal(visited[visited.indexOf('running')+1],'persists');
   assert.equal(await page.locator('article').count(),8);
   await page.getByRole('heading',{name:'8.8 / 10 · 通过'}).waitFor();
+  assert.equal(await page.locator('.reference').count(),8);
+  const card=page.locator('article').nth(visited.indexOf('teammate'));
+  await card.getByText('看参考回答',{exact:true}).tap();
+  assert.match(await card.locator('.reference').innerText(),/call 911/);
+  await card.getByRole('button',{name:'慢速循环'}).first().tap();
+  await page.waitForFunction(()=>{const a=document.querySelector('#voice');return a.loop&&a.playbackRate<1&&a.currentTime>0;});
+  await card.getByRole('button',{name:'慢速循环'}).first().tap();
+  assert.ok(await page.locator('#voice').evaluate(a=>a.paused&&!a.loop));
+  await page.reload();await btn('查看上次成绩').tap();
+  assert.equal(await page.locator('.reference').count(),8);
   await btn('重答这题').nth(1).tap();
   await page.evaluate(()=>window.testAnswer='I have a Chinese lifeguard certificate.');
   await btn('开始回答').tap();await btn('完成回答').waitFor();await page.waitForTimeout(150);await btn('完成回答').tap();

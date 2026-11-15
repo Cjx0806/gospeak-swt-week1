@@ -40,7 +40,10 @@
     for(let i=follow.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[follow[i],follow[j]]=[follow[j],follow[i]];}
     write(history,choices);session={start:Date.now(),index:0,turns:[...turns,...follow],end:false};save();
   }
-  function silence(){ticket++;voice.pause();note.textContent='';}
+  function silence(){
+    ticket++;voice.pause();voice.loop=false;voice.playbackRate=1;note.textContent='';
+    if(session?.end)panel.querySelectorAll('[aria-pressed="true"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+  }
   function say(){
     if(rec?.isRecording()){note.textContent='先完成当前回答，再重听。';return;}
     silence();const token=ticket,t=session.turns[session.index],q=row(t.key).options[t.variant];
@@ -72,15 +75,41 @@
       }});
     if(t.attempt)note.textContent='已保留本题上次回答，可以重答或继续。';
   }
+  function reviewCard(t,i,mark){
+    const r=row(t.key), q=r.options[t.variant];
+    const listen=(clip,label,rate)=>'<button type="button" data-clip="'+clip.id+'" data-rate="'+rate+'" aria-pressed="false">'+label+'</button>';
+    const examples=r.answers.map(a=>'<li><strong lang="en">'+esc(a.en)+'</strong><p>'+esc(a.zh)+'</p>'+
+      '<div class="steps">'+listen(a,'慢速循环',0.76)+listen(a,'正常循环',1)+'</div></li>').join('');
+    return '<article><h3>'+(i+1)+' · '+esc(r.title)+'</h3><b>'+mark.label+' · '+(mark.score===null?'待评':mark.score+' / 10')+'</b>'+
+      '<p lang="en">'+esc(q.en)+'</p><p>'+esc(q.zh)+'</p>'+listen(q,'重听这道题',1)+
+      '<p>我的回答（识别文字）</p><blockquote>'+esc(t.heard || (t.skipped?'本题已跳过':'还没有识别文字'))+'</blockquote><p>'+esc(mark.tip)+'</p>'+
+      '<details class="reference"><summary>看参考回答</summary>'+(r.note?'<p>'+esc(r.note)+'</p>':'')+
+      '<ol>'+examples+'</ol></details><div class="steps">'+btn('retry-'+i,'重答这题')+'</div></article>';
+  }
   function report(){
     dispose();const work=session.turns.find(x=>x.key==='sales')?.heard||'';
     const marks=session.turns.map(t=>window.EchoExamRubric.mark(t.key,t,work));
     const grade=window.EchoExamRubric.total(marks), pending=marks.filter(x=>x.score===null).length;
     const result=grade===null?'总分待定 · '+pending+' 题需要重新识别':grade.toFixed(1)+' / 10 · '+(grade>=6?'通过':'未通过');
     panel.innerHTML='<h2>'+result+'</h2><p>脱稿练习估分，按识别文字核对每题要点。可以用自己的词回答。识别遗漏时可以重答该题。</p>'+
-      session.turns.map((t,i)=>{const r=row(t.key),q=r.options[t.variant],m=marks[i];return '<article><h3>'+ (i+1)+' · '+esc(r.title)+'</h3><b>'+m.label+' · '+(m.score===null?'待评':m.score+' / 10')+'</b><p lang="en">'+esc(q.en)+'</p><p>'+esc(q.zh)+'</p>'+(t.heard?'<blockquote>'+esc(t.heard)+'</blockquote>':'')+'<p>'+esc(m.tip)+'</p>'+btn('retry-'+i,'重答这题')+'</article>';}).join('')+btn('start','换问法再考一次')+(poolExam?'<p><a href="echo-review.html?course=lifeguard5">回到救生员五题逐句练</a></p>':'');
+      session.turns.map((t,i)=>reviewCard(t,i,marks[i])).join('')+btn('start','换问法再考一次')+(poolExam?'<p><a href="echo-review.html?course=lifeguard5">回到救生员五题逐句练</a></p>':'');
   }
   panel.onclick=e=>{
+    const clipButton=e.target.closest('[data-clip]');
+    if(clipButton && session?.end){
+      const active=clipButton.getAttribute('aria-pressed')==='true';
+      silence();
+      if(active)return;
+      const token=ticket;
+      voice.src='echo/audio/'+clipButton.dataset.clip+'.mp3';
+      voice.playbackRate=Number(clipButton.dataset.rate);
+      voice.loop=!!clipButton.closest('.reference');
+      clipButton.setAttribute('aria-pressed','true');
+      note.textContent=voice.loop?'正在循环，点同一按钮停止。':'正在播放问句。';
+      voice.onended=()=>{if(token===ticket)silence();};
+      voice.play().catch(()=>{if(token===ticket){silence();note.textContent='音频没有播放，请再点一次。';}});
+      return;
+    }
     const b=e.target.closest('[data-action]');if(!b)return;
     if(rec?.isRecording()){note.textContent='请先点「完成回答」，等本次回答保存后再继续。';return;}
     const a=b.dataset.action;
@@ -104,5 +133,8 @@
       }
     }
   };
+  panel.addEventListener('toggle',e=>{
+    if(!e.target.open && e.target.matches('.reference') && e.target.querySelector('[aria-pressed="true"]'))silence();
+  },true);
   window.addEventListener('pagehide',silence);lobby();
 })();
