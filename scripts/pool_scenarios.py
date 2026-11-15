@@ -9,12 +9,12 @@ def turn(question, answers):
 def pool_lessons():
     drowning = {
         "key": "pool-rescue", "title": "有人溺水怎么办",
-        "cue": "drowning 是溺水；in trouble in the water 表示水中遇险。What would you do 问你会采取什么行动。",
+        "cue": "drowning 是溺水；in trouble in the water 表示水中遇险。What would you do 问具体行动。这里练泳池团队值岗的场景，发信号、施救和队友呼叫急救按照场馆预案配合。",
         "questions": [clip("What would you do if someone was drowning?", "如果有人溺水，你会怎么做？"),
                       clip("A swimmer is in trouble in the water. What would you do?", "一名泳客在水中遇险。你会怎么做？")],
         "answers": [clip("I'd signal for help right away.", "我会立刻发信号求援。"),
-                    clip("I'd follow our emergency plan.", "我会按场馆的应急预案行动。"),
-                    clip("I'd use my training to rescue the swimmer.", "我会用受训时学过的方法救助泳客。")],
+                    clip("I'd use my rescue tube to help the swimmer.", "我会用救生浮标救助泳客。"),
+                    clip("I'd ask a teammate to call 911.", "我会请一名队友拨打美国急救电话 911。")],
         "followups": [
             turn(("What would you do first?", "你第一步会做什么？"),
                  [("I'd signal for help right away.", "我会立刻发信号求援。")]),
@@ -44,6 +44,7 @@ def retest_lessons(hire, scenarios):
         "key": "pool-duties", "title": "救生员的职责",
         "cue": "听到 do 或 duties，回答你上班时做什么。",
         "questions": [hire["followups"][0]["question"],
+                      clip("What does being a lifeguard mean to you?", "你怎样理解救生员这份工作？"),
                       clip("What are your duties as a lifeguard?", "当救生员，你的职责是什么？")],
         "answers": hire["followups"][0]["answers"], "followups": []}
     priority = {

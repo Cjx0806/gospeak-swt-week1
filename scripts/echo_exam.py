@@ -47,6 +47,9 @@ def build_exam(site, lessons, retest):
         for key, prompt in zip(keys, lesson["followups"]):
             question = prompt["question"]
             pool.append(dict(key=key, title=question["zh"], options=[question], answers=prompt["answers"]))
+    for key in ["purpose","return"]:
+        lesson = by_key["r30-"+key]
+        pool.append(dict(key=key,title=lesson["title"],options=lesson["questions"],answers=lesson["answers"]))
     data["pool"] = pool
     for row in data['main']+data['follow']+pool:
         if not row['answers']: raise ValueError('Missing review answer: '+row['key'])

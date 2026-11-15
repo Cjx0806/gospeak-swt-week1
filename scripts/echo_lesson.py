@@ -37,7 +37,18 @@ def build(groups, topics):
         for row in original["variants"]:
             if row["en"] not in [q["en"] for q in prompts]:
                 prompts.append(clip(row["en"],row["zh"]))
+        if key=="r30-purpose":
+            answer = [clip("I want to experience American culture during my summer break.", "我想在暑假体验美国文化。"),
+                      clip("I'd like to meet people through my summer job.", "我想通过暑期工作认识当地的人。")]
+        if key=="r30-return":
+            answer = [clip("I'll go back to China before classes start.", "我会在开学前回中国。"),
+                      clip("I'll continue my studies in Guangxi.", "我会在广西继续读书。")]
         if key=="r30-hire":
-            followups[0]["answers"] = [clip("I watch the swimmers.","我留意游泳者。"),clip("I make sure they follow the pool rules.","我确保他们遵守泳池规则。")]
+            answer = [clip("I earned my lifeguard certificate in China.", "我在中国取得了救生员证。"),
+                      clip("My training taught me to spot swimmers in trouble.", "培训教会我识别遇险的泳客。"),
+                      clip("I swim a kilometer every day at school.", "我每天在学校游一公里。")]
+            followups[0]["answers"] = [clip("I watch the swimmers in my area.", "我留意自己负责区域的泳客。"),
+                                       clip("I remind people of the pool rules.", "我提醒大家遵守泳池规则。"),
+                                       clip("If someone is in trouble, I help right away.", "有人遇险，我会立刻施救。")]
         lessons.append(dict(key=key,title=title,cue=cue,questions=prompts,answers=answer,followups=followups))
     return lessons

@@ -37,10 +37,10 @@ const {webkit,devices}=require('playwright'),assert=require('node:assert/strict'
   await btn('开始模拟口测').tap();
   const poolSession=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('pool-exam-session-1')));
   const poolAnswers={...answers,hire:answers.duties,duties:'I watch the swimmers.',priority:'Keeping swimmers safe.',
-    running:'I tell the child to walk.',persists:'I ask another staff member for help.',
-    rescue:'I signal for help and follow our emergency plan.',teammate:'Call 911.'};
+    say:'Please walk.',return:"I'll return to China to finish college.",running:'I tell the child to walk.',persists:'I ask another staff member for help.',
+    rescue:'I signal for help and rescue the swimmer.',teammate:'Call 911.'};
   const visited=[];
-  for(let i=0;i<8;i++){
+  for(let i=0;i<10;i++){
     const turn=(await poolSession()).turns[i];
     assert.ok(poolAnswers[turn.key],turn.key);
     visited.push(turn.key);assert.equal(await page.locator('.reference').count(),0);
@@ -50,13 +50,13 @@ const {webkit,devices}=require('playwright'),assert=require('node:assert/strict'
     await page.evaluate(a=>window.testAnswer=a,poolAnswers[turn.key]);
     await btn('开始回答').tap();await btn('完成回答').waitFor();await page.waitForTimeout(150);await btn('完成回答').tap();
     await page.waitForFunction(()=>document.querySelector('#note').textContent.includes('已收到回答'));
-    await btn(i===7?'完成并看成绩':'我答完了，下一题').tap();
+    await btn(i===9?'完成并看成绩':'我答完了，下一题').tap();
   }
   assert.equal(visited[visited.indexOf('rescue')+1],'teammate');
-  assert.equal(visited[visited.indexOf('running')+1],'persists');
-  assert.equal(await page.locator('article').count(),8);
-  await page.getByRole('heading',{name:'8.8 / 10 · 通过'}).waitFor();
-  assert.equal(await page.locator('.reference').count(),8);
+  assert.equal(visited[visited.indexOf('running')+1],'say');
+  assert.equal(await page.locator('article').count(),10);
+  await page.getByRole('heading',{name:'9.0 / 10 · 通过'}).waitFor();
+  assert.equal(await page.locator('.reference').count(),10);
   const card=page.locator('article').nth(visited.indexOf('teammate'));
   await card.getByText('看参考回答',{exact:true}).tap();
   assert.match(await card.locator('.reference').innerText(),/call 911/);
@@ -65,8 +65,8 @@ const {webkit,devices}=require('playwright'),assert=require('node:assert/strict'
   await card.getByRole('button',{name:'慢速循环'}).first().tap();
   assert.ok(await page.locator('#voice').evaluate(a=>a.paused&&!a.loop));
   await page.reload();await btn('查看上次成绩').tap();
-  assert.equal(await page.locator('.reference').count(),8);
-  await btn('重答这题').nth(1).tap();
+  assert.equal(await page.locator('.reference').count(),10);
+  await btn('重答这题').nth(visited.indexOf('hire')).tap();
   await page.evaluate(()=>window.testAnswer='I have a Chinese lifeguard certificate.');
   await btn('开始回答').tap();await btn('完成回答').waitFor();await page.waitForTimeout(150);await btn('完成回答').tap();
   await page.waitForFunction(()=>document.querySelector('#note').textContent.includes('已收到回答'));

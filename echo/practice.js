@@ -1,15 +1,17 @@
 (() => {
   'use strict';
-  const retest = new URLSearchParams(location.search).get('course') === 'lifeguard5';
-  const lessons = JSON.parse(document.querySelector(retest?'#retest-lessons':'#lessons').textContent);
+  const course = new URLSearchParams(location.search).get('course');
+  const focus = course === 'swt', retest = focus || course === 'lifeguard5';
+  const size = focus ? '六题' : '五题';
+  const lessons = JSON.parse(document.querySelector(focus?'#focus-lessons':retest?'#retest-lessons':'#lessons').textContent);
   const select = document.querySelector('#topic'), stages = document.querySelector('#stages');
   const panel = document.querySelector('#practice'), demo = document.querySelector('#demo');
   const status = document.querySelector('#audio-status');
-  const labels = ['听考官问法','逐句跟读',retest?'五题连续追问':'随机追问'];
-  let deck = [], turn = 0;
+  const labels = ['听考官问法','逐句跟读',retest?size+'连续追问':'随机追问'];
+  let deck = [], turn = 0, whole = false;
   if(retest){
-    document.title='救生员五题 · SWT 复测';
-    document.querySelector('h1').textContent='救生员五题 · 复测主线';
+    document.title=focus?'复试重点 · 六题听说':'救生员五题 · SWT 复测';
+    document.querySelector('h1').textContent=focus?document.title:'救生员五题 · 复测主线';
     select.replaceChildren(...lessons.map((l,i)=>new Option((i+1)+' · '+l.title,l.key)));
     document.querySelector('main > details').hidden=true;
   }
@@ -82,28 +84,28 @@
     document.querySelector('label[for="topic"]').hidden=blind;
     if(blind){
       if(turn===deck.length){
-        html='<h2>五题已结束</h2><p>点开任一题核对刚才的问法和回答。</p>'+
+        html='<h2>'+size+'已结束</h2><p>点开任一题核对刚才的问法和回答。</p>'+
           deck.map(({lesson,question})=>'<details><summary>'+esc(lesson.title)+'</summary>'+words(question)+lesson.answers.map(words).join('')+'</details>').join('')+
-          '<div class="steps">'+button('restart','打乱再练一次','primary')+button('child-say','加练：你会对孩子说什么？')+'</div>';
+          '<div class="steps">'+button('restart','打乱再练一次','primary')+(focus?'<a href="echo-exam.html?examiner=pool">进入模拟考场</a>':button('child-say','加练：你会对孩子说什么？'))+'</div>';
       }else{
         html='<small>第 '+(turn+1)+' / '+deck.length+' 题</small><h2>听完题，自己答</h2>'+
           button('replay','重听考官')+button('show','没听清？看问句')+'<div id="take"></div><div class="steps">'+
-          button('advance',turn===deck.length-1?'结束并核对五题':'我答完了，听下一题','primary')+'</div>';
+          button('advance',turn===deck.length-1?'结束并核对'+size:'我答完了，听下一题','primary')+'</div>';
         target={id:'sam-v25:retest:'+deck[turn].question.id,title:'脱稿回答',kind:'answer',assessmentMode:'free',expectedText:''};
       }
     }else if(stage===0){
       line=lesson.questions[index];
       html='<small>同一题 · 问法 '+(index+1)+' / '+lesson.questions.length+'</small><h2>听听考官怎么问</h2>'+controls()+
-        button('show',visible?'收起问句':'显示问句与中文')+(visible?words(line)+'<p>'+esc(lesson.cue)+'</p>':'')+
+        button('show',visible?'收起问句':'显示问句与中文')+(visible?'<div class="transcript">'+words(line)+'<p>'+esc(lesson.cue)+'</p></div>':'')+
         '<div class="steps">'+(retest?button('cycle','轮流听全部问法'):'')+button('next','换个问法听')+button('answer','开始逐句跟读','primary')+'</div>';
     }else if(stage===1 || model){
       const lines=model?follow.answers:lesson.answers;
-      line=lines[index];
-      html='<small>'+ (model?'追问参考':'我的回答')+' · 第 '+(index+1)+' / '+lines.length+' 句</small>'+
+      line=whole?lesson.whole:lines[index];
+      html=whole?'<small>脱离分句，连起来说</small>'+words(line)+controls()+'<div id="take"></div><div class="steps">'+button('answer','回到分句')+button('next-topic','继续练习','primary')+'</div>':'<small>'+ (model?'追问参考':'我的回答')+' · 第 '+(index+1)+' / '+lines.length+' 句</small>'+
         (model?'<p class="q">'+esc(follow.question.zh)+'</p>':'')+
         (model&&follow.note?'<p>'+esc(follow.note)+'</p>':'')+words(line)+controls()+'<div id="take"></div>'+
         '<div class="steps">'+(index?button('prev','上一句'):'')+
-        (index+1<lines.length?button('next','下一句','primary'):retest?button('next-topic',lessons.indexOf(lesson)===lessons.length-1?'开始五题连续追问':'下一题 · 先听考官','primary'):button('draw','听随机追问','primary'))+'</div>';
+        (focus&&index+1===lines.length?button('whole','连起来听和读','primary'):index+1<lines.length?button('next','下一句','primary'):retest?button('next-topic',lessons.indexOf(lesson)===lessons.length-1?'开始'+size+'连续追问':'下一题 · 先听考官','primary'):button('draw','听随机追问','primary'))+'</div>';
       if(!retest && model && lesson.key==='r30-hire' && follow===lesson.followups[0]){
         html+='<div class="steps"><a href="#pool-rescue">接着练：有人溺水</a><a href="#pool-running">接着练：小孩在池边跑</a></div>';
       }
@@ -129,7 +131,7 @@
     }
   }
   function enter(i){
-    stage=i;index=0;visible=false;model=false;
+    stage=i;index=0;visible=false;model=false;whole=false;
     if(stage===2){if(retest)startDeck();else drawFollow();}
     render();
     if(stage===2)play(retest?deck[turn].question:follow.question,1,false);
@@ -158,6 +160,7 @@
       }
       return;
     }
+    if(action==='whole'){whole=true;render();play(lesson.whole,0.76,true);return;}
     if(action==='next-topic'){
       const next=lessons[lessons.indexOf(lesson)+1];
       if(next){select.value=next.key;select.onchange();play(lesson.questions[0],1,false);}
@@ -165,7 +168,7 @@
       return;
     }
     const lines=stage===0?lesson.questions:model?follow.answers:stage===1?lesson.answers:[follow.question];
-    if(action==='normal'||action==='slow'){play(lines[stage===2&&!model?0:index],action==='slow'?0.76:1,true);return;}
+    if(action==='normal'||action==='slow'){play(whole?lesson.whole:lines[stage===2&&!model?0:index],action==='slow'?0.76:1,true);return;}
     if(action==='show'){
       // Keep the question playing when its transcript is opened.
       const open=!visible;

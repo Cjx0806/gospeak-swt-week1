@@ -4,7 +4,7 @@
   const poolExam=new URLSearchParams(location.search).get('examiner')==='pool';
   const store=poolExam?'pool-exam-session-1':'echo-exam-session-1';
   const history=poolExam?'pool-exam-variants-1':'echo-exam-variants-1';
-  const count=poolExam?8:7;
+  let count=poolExam?10:7;
   if(poolExam){
     document.title='Alex · 救生员复测考官';
     document.querySelector('h1').textContent=document.title;
@@ -17,18 +17,21 @@
   const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
   const pick=(arr,except)=>{const options=arr.filter(x=>x!==except);return (options.length?options:arr)[Math.floor(Math.random()*(options.length||arr.length))];};
   let session=read(store), rec=null, ticket=0;
-  if(!session || session.turns?.length!==count || !session.turns.every(t=>row(t.key)?.options[t.variant])||!session.turns[session.index])session=null;
+  if(!session || !(session.turns?.length===count || (poolExam && session.turns?.length===8)) || !session.turns.every(t=>row(t.key)?.options[t.variant])||!session.turns[session.index])session=null;
+  if(session)count=session.turns.length;
   const save=()=>write(store,session);
   function make(){
     const last=read(history)||{}, choices={};
     const turn=r=>{const variant=pick(r.options.map((_,i)=>i),last[r.key]);choices[r.key]=variant;return {key:r.key,variant};};
     if(poolExam){
-      const keys=['intro','hire','duties','priority'];
+      count=10;
+      const keys=['intro','purpose','hire','duties','priority'];
       const first=pick(['rescue','running'],last.first);
       choices.first=first;
       for(const key of [first,first==='rescue'?'running':'rescue']){
         keys.push(key,key==='rescue'?'first':'say');
       }
+      keys.push('return');
       const turns=keys.map(key=>turn(row(key)));
       write(history,choices);session={start:Date.now(),index:0,turns,end:false};save();return;
     }
@@ -55,7 +58,7 @@
   function lobby(){
     dispose();
     if(poolExam){
-      panel.innerHTML='<h2>从自我介绍到泳池现场</h2><p>开场沿用豆包热身问句。后续根据你回忆的职责难点设计，由 Alex 用英语提问。两道现场题各有一次追问。</p><p>共 8 题。听完点「开始回答」，说完点「完成回答」。交卷后看逐题反馈和 10 分制估分，6 分通过。</p><div class="steps">'+(session?btn('resume',session.end?'查看上次成绩':'继续上次考试',true):'')+btn('start',session?'重新开考':'开始模拟口测',!session)+'</div>';
+      panel.innerHTML='<h2>从自我介绍到泳池现场</h2><p>自我介绍后，Alex 会问项目动机、录用理由和职责，再出两道泳池情境题。每道根据你的回答继续追问，最后问暑期结束后的安排。</p><p>共 10 题。听完点「开始回答」，说完点「完成回答」。交卷后看逐题反馈和 10 分制估分，6 分通过。</p><div class="steps">'+(session?btn('resume',session.end?'查看上次成绩':'继续上次考试',true):'')+btn('start',session?'重新开考':'开始模拟口测',!session)+'</div>';
       return;
     }
     panel.innerHTML='<a href="./echo-exam.html?examiner=pool">换考官：Alex · 救生员复测</a><h2>自我介绍之后，接三组提问</h2><p>先介绍自己，再回答工作经历、项目动机、救生员岗位。随后考官从这三组各抽一道追问，共 7 题。</p><p>每题听完点「开始回答」。你决定什么时候答完和进入下一题。7 题等权，平均分达到 6 / 10 即通过。</p><div class="steps">'+(session?btn('resume',session.end?'查看上次成绩':'继续上次考试',true):'')+btn('start',session?'重新开考':'开始模拟口测',!session)+'</div>';
@@ -92,7 +95,7 @@
     const grade=window.EchoExamRubric.total(marks), pending=marks.filter(x=>x.score===null).length;
     const result=grade===null?'总分待定 · '+pending+' 题需要重新识别':grade.toFixed(1)+' / 10 · '+(grade>=6?'通过':'未通过');
     panel.innerHTML='<h2>'+result+'</h2><p>脱稿练习估分，按识别文字核对每题要点。可以用自己的词回答。识别遗漏时可以重答该题。</p>'+
-      session.turns.map((t,i)=>reviewCard(t,i,marks[i])).join('')+btn('start','换问法再考一次')+(poolExam?'<p><a href="echo-review.html?course=lifeguard5">回到救生员五题逐句练</a></p>':'');
+      session.turns.map((t,i)=>reviewCard(t,i,marks[i])).join('')+btn('start','换问法再考一次')+(poolExam?'<p><a href="echo-review.html?course=swt">回到复试重点逐句练</a></p>':'');
   }
   panel.onclick=e=>{
     const clipButton=e.target.closest('[data-clip]');
@@ -125,7 +128,7 @@
       else{
         if(poolExam && (t.key==='running'||t.key==='rescue')){
           const heard=t.complete?t.heard:'';
-          const key=t.key==='running'?( /\b(walk|slow down|stop running)\b/i.test(heard)?'persists':'say'):
+          const key=t.key==='running'?( /^(?:(?:hey|please|buddy)[,!. ]+)*(?:walk|slow down|stop running|no running|don.t run)\b/i.test(heard.trim())?'persists':'say'):
             (/\b(signal|alert|whistle|call|shout)\b/i.test(heard)?'teammate':'first');
           session.turns[session.index+1]={key,variant:0};
         }

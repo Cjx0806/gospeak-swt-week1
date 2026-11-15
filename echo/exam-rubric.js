@@ -6,6 +6,7 @@
     sales:'说过去做过的一项具体工作，例如买卖二手手机或帮驾校招生。',
     other:'补一项刚才没有提到的工作。如果已经说完，可以直接说这就是你做过的两项工作。',
     prior:'直接说你有没有实际当过救生员。持证和任职是两个问题。',
+    return:'问项目结束后的下一步。说回中国继续读书。毕业年份可以留给追问。',
     purpose:'先说报名的原因。可以说想体验美国文化，再补想在工作中练英语。',
     gain:'说一项你希望带走的收获，例如说英语更自信，或获得工作经验。',
     usa:'说美国吸引你的地方，例如想看看美国人平时怎样生活。',
@@ -50,13 +51,20 @@
         const explicit=/\b(never|haven't|have not|worked|been|was|work as)\b.*\blifeguard\b|\blifeguard\b.*\b(before|in china)\b/.test(s);
         return [yes||no||explicit,explicit||/^(yes i have|no i haven't|no i have not|not yet)$/.test(s)];
       }
+      case 'return':{
+        const back=/\b(return|go back|come back|head back|fly back|go home|go to china)\b/.test(s);
+        const school=/\b(college|university|studies|study|school|classes|degree)\b/.test(s);
+        const place=/\b(china|guangxi|home)\b/.test(s);
+        if(/\b(stay|remain) in (?:the )?(us|united states|america)\b/.test(s)&&!back)return [false,false];
+        return [back&&(place||school),back&&place&&school];
+      }
       case 'purpose': return [aim&&(english||culture||/\b(work experience|cultural exchange|work abroad)\b/.test(s)),aim&&(english||culture)];
       case 'gain': return [aim&&(english||culture||/\b(confidence|skills?|experience|friends|independence)\b/.test(s)),aim&&(english||culture||/\b(work experience|new friends|communication skills)\b/.test(s))];
       case 'usa': return [culture||/\b(the us|america|american)\b/.test(s)&&aim,culture&&aim];
-      case 'hire': return [cert||training||/\b(trained lifeguard|lifeguard experience|worked as a lifeguard|first aid|good swimmer)\b/.test(s),cert&&(/\b(lifeguard|lifeguarding)\b/.test(s)||training)||training];
+      case 'hire': return [cert&&/\blifeguard(ing)?\b/.test(s)||training||/\b(trained lifeguard|lifeguard experience|worked as a lifeguard|first aid|good swimmer)\b/.test(s),cert&&(/\b(lifeguard|lifeguarding)\b/.test(s)||training)||training];
       case 'duties':{
         const watch=/\b(watch|monitor|check|supervise|keep an eye on|protect|help|rescue)\b.*\b(swimmers?|people|pool|water|guests?)\b/.test(s);
-        const rules=/\b(rules|safe|safety)\b/.test(s)&&/\b(follow|enforce|remind|keep|make sure|check)\b/.test(s);
+        const rules=/\b(enforce|remind|make sure)\b.*\brules\b|\bkeep\b.*\b(swimmers?|people|guests?)\b.*\bsafe\b/.test(s);
         return [watch||rules,watch||rules];
       }
       case 'priority':{
@@ -69,7 +77,7 @@
         const alert=/\b(signal|call|shout|yell|whistle|ask|alert|activate|blow)\b.*\b(help|team|backup|guard|alarm|whistle|plan|911|9 1 1)\b|\bsound the alarm\b/.test(s);
         const plan=/\b(follow|use|activate|start)\b.*\b(training|emergency plan|emergency action plan|eap)\b/.test(s);
         const rescue=/\b(rescue|save|help)\b.*\b(swimmer|person|them|victim)\b/.test(s);
-        return key==='first'?[alert||plan,alert||plan]:[alert||plan||rescue,[alert,plan,rescue].filter(Boolean).length>=2];
+        return key==='first'?[alert||plan,alert||plan]:[alert||plan||rescue,rescue&&(alert||plan)];
       }
       case 'teammate':{
         const call=/\b(call|contact|dial|phone|get)\b.*\b(911|9 1 1|nine one one|ems|emergency services|ambulance|help)\b/.test(s);
@@ -105,6 +113,7 @@
     if(!t.complete||!t.heard?.trim())return {score:null,label:'识别不完整',tip:'重答并取得完整转写后再计分。'};
     const s=normalized(t.heard);
     const [hit,specific]=evidence(key,s,normalized(previous));
+    if(key==='say'&&hit&&!specific)return {score:4,label:'说了做法，还需要直接对孩子说',tip};
     if(hit)return {score:specific?10:7,label:specific?'答到重点':'已切题，可补细节',tip:specific?'回答中听到了这题需要的信息。':tip};
     if(key==='other' && evidence('sales',s,'')[0])return {score:4,label:'还没补出另一项经历',tip};
     const partial= key==='hire'&&/\b(swim|swimming|responsible|careful)\b/.test(s)||key==='sales'&&/^(yes|yes i have|yes i do)$/.test(s);

@@ -18,12 +18,19 @@ assert.equal(total([{score:6},{score:6}]),6);
 assert.equal(total([{score:null},{score:10}]),null);
 
 for(const [key,answer] of Object.entries({
-  priority:'Keeping swimmers safe.',rescue:"I'd signal for help and follow the emergency plan.",
+  priority:'Keeping swimmers safe.',rescue:"I'd signal for help and rescue the swimmer.",
   first:"I'd blow my whistle.",teammate:"Please call 911.",running:"I'd tell the child to walk.",
   say:'Please walk.',persists:"I'd ask another staff member to help."
 })){
   assert.equal(m(key,answer),10,key);
   assert.equal(m(key,'I have a Chinese lifeguard certificate.'),0,key);
 }
-assert.equal(m('say',"I would tell the child to walk."),7);
+assert.equal(m('say',"I would tell the child to walk."),4);
 assert.equal(m('rescue',"I would call for help."),7);
+
+assert.equal(m('return',"I'll go back to China before classes start. I'll continue my studies in Guangxi."),10);
+assert.equal(m('return',"I want to become a swimming coach."),0);
+assert.equal(m('return',"I want to stay in the US."),0);
+assert.equal(m('duties',"I follow safety rules."),0);
+assert.equal(m('purpose',"I will return to China."),0);
+assert.equal(m('rescue',"I would activate our emergency plan."),7);
