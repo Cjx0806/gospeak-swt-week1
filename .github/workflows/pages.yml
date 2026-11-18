@@ -112,6 +112,12 @@ jobs:
         run: |
           python scripts/build_echo_review.py
           node scripts/test_echo_exam.cjs
+      - name: Add the employer interview sprint
+        run: |
+          unzip -qo gospeak-employer-sprint.zip
+          python scripts/add_employer_sprint.py _site
+          node --check _site/assets/mainline-v21.js
+          node --check _site/sw.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -130,3 +136,4 @@ jobs:
           NODE_PATH="$deps/node_modules" node scripts/verify_published_ipad_v36.cjs "${SITE_URL%/}/"
           NODE_PATH="$deps/node_modules" node scripts/verify_echo_ipad.cjs "${SITE_URL%/}/"
           NODE_PATH="$deps/node_modules" node scripts/verify_echo_exam_ipad.cjs "${SITE_URL%/}/"
+          NODE_PATH="$deps/node_modules" node scripts/verify_employer_sprint_ipad.cjs "${SITE_URL%/}/"
